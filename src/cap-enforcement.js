@@ -114,14 +114,21 @@ function handleAuth(socketId, authEvent) {
     return { ok: false, message: msg }
   }
 
-  // 6. Verify CAP signature (proves collective issued it)
+  // 6. Verify CAP is correct kind
+  if (cap.kind !== 39100) {
+    const msg = `invalid cap kind: expected 39100, got ${cap.kind}`
+    logEvent(socketId, 'out', 'OK', msg)
+    return { ok: false, message: msg }
+  }
+
+  // 7. Verify CAP signature (proves collective issued it)
   if (!verifyEvent(cap)) {
     const msg = 'invalid cap signature'
     logEvent(socketId, 'out', 'OK', msg)
     return { ok: false, message: msg }
   }
 
-  // 7. Check grantee matches auth pubkey
+  // 8. Check grantee matches auth pubkey
   const grantee = cap.tags?.find(t => t[0] === 'p')?.[1]
   if (grantee !== authEvent.pubkey) {
     const msg = `grantee mismatch: cap=${grantee?.slice(0, 8)}, auth=${authEvent.pubkey?.slice(0, 8)}`
@@ -234,7 +241,7 @@ function canWrite(socketId, event) {
 
   // Check if event author matches authenticated pubkey
   if (event.pubkey !== conn.pubkey) {
-    const reason = `blocked: pubkey mismatch (auth=${conn.pubkey.slice(0, 8)}, event=${event.pubkey.slice(0, 8)})`
+    const reason = `restricted: pubkey mismatch (auth=${conn.pubkey.slice(0, 8)}, event=${event.pubkey.slice(0, 8)})`
     log(socketId, '✗ Write denied:', reason)
     return { ok: false, reason }
   }
@@ -247,7 +254,7 @@ function canWrite(socketId, event) {
   )
 
   if (!hasGrant) {
-    const reason = `blocked: no publish grant for kind:${event.kind} in ${commons}`
+    const reason = `restricted: no publish grant for kind:${event.kind} in ${commons}`
     log(socketId, '✗ Write denied:', reason)
     return { ok: false, reason }
   }

@@ -25,7 +25,7 @@ const server = http.createServer((req, res) => {
       pubkey: process.env.RELAY_PUBKEY,
       description: process.env.RELAY_DESCRIPTION,
       software: "https://github.com/nigini/bucket",
-      supported_nips: [1, 11],
+      supported_nips: [1, 11, 42, "CC"],
     }))
   } else {
     res.writeHead(404)
